@@ -18,6 +18,23 @@ declare global {
 	}
 }
 
+// 安全获取 localStorage，防止在 SSR 或被覆盖时调用非函数
+function getSafeLocalStorage(): Storage | null {
+	if (typeof window === "undefined" || typeof window.localStorage === "undefined") {
+		return null;
+	}
+
+	const storage = window.localStorage as Storage;
+	if (
+		typeof storage.getItem !== "function" ||
+		typeof storage.setItem !== "function"
+	) {
+		return null;
+	}
+
+	return storage;
+}
+
 export function getDefaultHue(): number {
 	const fallback = "250";
 	// 检查是否在浏览器环境中
@@ -54,19 +71,21 @@ export function resolveTheme(theme: LIGHT_DARK_MODE): LIGHT_DARK_MODE {
 
 export function getHue(): number {
 	// 检查是否在浏览器环境中
-	if (typeof localStorage === "undefined") {
+	const storage = getSafeLocalStorage();
+	if (!storage) {
 		return getDefaultHue();
 	}
-	const stored = localStorage.getItem("hue");
+	const stored = storage.getItem("hue");
 	return stored ? Number.parseInt(stored, 10) : getDefaultHue();
 }
 
 export function setHue(hue: number): void {
 	// 检查是否在浏览器环境中
-	if (typeof localStorage === "undefined" || typeof document === "undefined") {
+	const storage = getSafeLocalStorage();
+	if (!storage || typeof document === "undefined") {
 		return;
 	}
-	localStorage.setItem("hue", String(hue));
+	storage.setItem("hue", String(hue));
 	const r = document.querySelector(":root") as HTMLElement;
 	if (!r) {
 		return;
@@ -142,7 +161,8 @@ let systemThemeListener:
 
 export function setTheme(theme: LIGHT_DARK_MODE): void {
 	// 检查是否在浏览器环境中
-	if (typeof localStorage === "undefined") {
+	const storage = getSafeLocalStorage();
+	if (!storage) {
 		return;
 	}
 
@@ -150,7 +170,7 @@ export function setTheme(theme: LIGHT_DARK_MODE): void {
 	applyThemeToDocument(theme);
 
 	// 保存到localStorage
-	localStorage.setItem("theme", theme);
+	storage.setItem("theme", theme);
 
 	// 如果切换到 system 模式，需要监听系统主题变化
 	if (theme === SYSTEM_MODE) {
@@ -233,17 +253,18 @@ function cleanupSystemThemeListener() {
 
 export function getStoredTheme(): LIGHT_DARK_MODE {
 	// 检查是否在浏览器环境中
-	if (typeof localStorage === "undefined") {
+	const storage = getSafeLocalStorage();
+	if (!storage) {
 		return getDefaultTheme();
 	}
 	return (
-		(localStorage.getItem("theme") as LIGHT_DARK_MODE) || getDefaultTheme()
+		(storage.getItem("theme") as LIGHT_DARK_MODE) || getDefaultTheme()
 	);
 }
 
 // 初始化主题监听器（用于页面加载后）
 export function initThemeListener() {
-	if (typeof localStorage === "undefined") {
+	if (!getSafeLocalStorage()) {
 		return;
 	}
 
@@ -621,10 +642,11 @@ function adjustMainContentTransparency(enable: boolean) {
 
 export function setWallpaperMode(mode: WALLPAPER_MODE): void {
 	// 检查是否在浏览器环境中
-	if (typeof localStorage === "undefined") {
+	const storage = getSafeLocalStorage();
+	if (!storage) {
 		return;
 	}
-	localStorage.setItem("wallpaperMode", mode);
+	storage.setItem("wallpaperMode", mode);
 	applyWallpaperModeToDocument(mode);
 }
 
@@ -635,11 +657,12 @@ export function initWallpaperMode(): void {
 
 export function getStoredWallpaperMode(): WALLPAPER_MODE {
 	// 检查是否在浏览器环境中
-	if (typeof localStorage === "undefined") {
+	const storage = getSafeLocalStorage();
+	if (!storage) {
 		return siteConfig.backgroundWallpaper.mode;
 	}
 	return (
-		(localStorage.getItem("wallpaperMode") as WALLPAPER_MODE) ||
+		(storage.getItem("wallpaperMode") as WALLPAPER_MODE) ||
 		siteConfig.backgroundWallpaper.mode
 	);
 }

@@ -22,16 +22,29 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 		children: [
 			{
 				name: "GitHub",
-				url: "https://github.com/CuteLeaf/Firefly",
+				url: "https://github.com/bgspiders",
 				external: true,
-				icon: "fa6-brands:github",
+				icon: "",
 			},
 			{
-				name: "Bilibili",
-				url: "https://space.bilibili.com/38932988",
+				name: "CURL",
+				url: "https://curl.bgspider.com/",
 				external: true,
-				icon: "fa6-brands:bilibili",
+				icon: "",
 			},
+			{
+				name: "在线工具",
+				url: "https://tools.bgspider.com/",
+				external: true,
+				icon: "",
+			},
+			
+			// {
+			// 	name: "Bilibili",
+			// 	url: "https://space.bilibili.com/38932988",
+			// 	external: true,
+			// 	icon: "fa6-brands:bilibili",
+			// },
 		],
 	});
 
