@@ -21,8 +21,8 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 		icon: "material-symbols:link",
 		children: [
 			{
-				name: "GitHub",
-				url: "https://github.com/bgspiders",
+				name: "在线工具",
+				url: "https://tools.bgspider.com/",
 				external: true,
 				icon: "",
 			},
@@ -33,12 +33,12 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 				icon: "",
 			},
 			{
-				name: "在线工具",
-				url: "https://tools.bgspider.com/",
+				name: "GitHub",
+				url: "https://github.com/bgspiders",
 				external: true,
 				icon: "",
 			},
-			
+
 			// {
 			// 	name: "Bilibili",
 			// 	url: "https://space.bilibili.com/38932988",

@@ -6,7 +6,7 @@ export const profileConfig: ProfileConfig = {
 	// 名字
 	name: "bgspider",
 	// 个人签名
-	bio: "Hello, I'm bgspider.",
+	bio: "记录技术与思考，在代码的世界里寻找光亮",
 
 	// 链接配置
 	// 已经预装的图标集：fa6-brands，fa6-regular，fa6-solid，material-symbols，simple-icons
