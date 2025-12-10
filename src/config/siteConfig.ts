@@ -7,10 +7,10 @@ const SITE_LANG = "zh_CN";
 
 export const siteConfig: SiteConfig = {
 	title: "爱你的大饼头哟",
-	subtitle: "bgspider",
-	site_url: "https://bgspider.com",
+	subtitle: "bgspider,记录技术与思考，在代码的世界里寻找光亮",
+	site_url: "https://blog.gspider.com",
 	description:
-		"爱你的大饼头哟-bgspider",
+		"爱你的大饼头哟,记录技术与思考，在代码的世界里寻找光亮",
 	keywords: [
 		"bgspider",
 		"戒酒的李白",
