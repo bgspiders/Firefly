@@ -3,8 +3,8 @@ title: edgeone部署静态网站
 published: 2025-12-09
 description: ''
 image: ''
-tags: []
-category: ''
+tags: ['edgeone','edgeone']
+category: 'cdn'
 draft: false 
 lang: ''
 ---
