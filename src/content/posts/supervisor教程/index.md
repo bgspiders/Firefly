@@ -1,7 +1,11 @@
 ---
 title: supervisor教程
-date: 2025-10-09T17:21:50Z
-lastmod: 2025-12-17T16:41:53Z
+published: 2025-12-17
+description: supervisor是一个统一管理批量化进程的工具，最主要用处是接口或者程序半夜挂了，能够自己重新启动。
+image: supervisor
+tags: [supervisor]
+category: supervisor
+draft: false
 ---
 
 # supervisor教程
