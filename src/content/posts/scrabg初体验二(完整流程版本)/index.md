@@ -1,7 +1,12 @@
 ---
 title: scrabg初体验二(完整流程版本)
-date: 2025-12-25T16:34:32Z
-lastmod: 2025-12-25T16:48:49Z
+published: 2025-12-25
+description: 'scrabg启动完整流程版本'
+image: 'api'
+tags: ['scrabg']
+category: 'scrabg'
+draft: false 
+lang: ''
 ---
 
 # scrabg初体验二(完整流程版本)
