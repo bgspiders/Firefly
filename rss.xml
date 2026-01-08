@@ -1,0 +1,1280 @@
+<?xml version="1.0" encoding="UTF-8"?><rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>爱你的大饼头哟 - bgspider,记录技术与思考，在代码的世界里寻找光亮</title><description>爱你的大饼头哟,记录技术与思考，在代码的世界里寻找光亮</description><link>https://blog.gspider.com/</link><language>zh_CN</language><item><title>获取fake-useragent库全部的User-Agents</title><link>https://blog.gspider.com/posts/%E8%8E%B7%E5%8F%96fake-useragent%E5%BA%93%E5%85%A8%E9%83%A8%E7%9A%84user-agents/</link><guid isPermaLink="true">https://blog.gspider.com/posts/%E8%8E%B7%E5%8F%96fake-useragent%E5%BA%93%E5%85%A8%E9%83%A8%E7%9A%84user-agents/</guid><description>获取fake-useragent库全部的User-Agents</description><pubDate>Thu, 08 Jan 2026 00:00:00 GMT</pubDate><content:encoded>&lt;h1&gt;获取fake-useragent库全部的User-Agents&lt;/h1&gt;
+&lt;h2&gt;关于 User-Agents 数据源&lt;/h2&gt;
+&lt;p&gt;​&lt;code&gt;fake-useragent&lt;/code&gt;​ 项目所使用的 User-Agent 数据源来自于 &lt;a href=&quot;https://github.com/intoli/user-agents&quot;&gt;intoli/user-agents&lt;/a&gt; 项目，该项目保持稳定且频繁的更新节奏，能够及时反映最新的浏览器 UA 信息。&lt;/p&gt;
+&lt;h2&gt;国内镜像加速&lt;/h2&gt;
+&lt;p&gt;为了解决网络访问问题，我在 Gitea 上创建了 &lt;a href=&quot;https://gitea.bgspider.com/bgspider/user-agents/&quot;&gt;bgspider/user-agents&lt;/a&gt; 的镜像仓库。该镜像每 8 小时自动同步一次最新数据，确保数据的时效性。&lt;/p&gt;
+&lt;h2&gt;直接下载地址&lt;/h2&gt;
+&lt;pre&gt;&lt;code&gt;https://gitea.bgspider.com/bgspider/user-agents/raw/branch/main/src/user-agents.json.gz
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;网络不稳定的用户可直接从该地址下载最新的 User-Agents 数据文件。&lt;/p&gt;
+</content:encoded></item><item><title>scrabg初体验二(完整流程版本)</title><link>https://blog.gspider.com/posts/scrabg%E5%88%9D%E4%BD%93%E9%AA%8C%E4%BA%8C%E5%AE%8C%E6%95%B4%E6%B5%81%E7%A8%8B%E7%89%88%E6%9C%AC/</link><guid isPermaLink="true">https://blog.gspider.com/posts/scrabg%E5%88%9D%E4%BD%93%E9%AA%8C%E4%BA%8C%E5%AE%8C%E6%95%B4%E6%B5%81%E7%A8%8B%E7%89%88%E6%9C%AC/</guid><description>scrabg启动完整流程版本</description><pubDate>Thu, 25 Dec 2025 00:00:00 GMT</pubDate><content:encoded>&lt;h1&gt;scrabg初体验二(完整流程版本)&lt;/h1&gt;
+&lt;p&gt;步骤开始前默认已经好mysql、redis、mongo数据库&lt;/p&gt;
+&lt;h3&gt;1.创建项目环境&lt;/h3&gt;
+&lt;pre&gt;&lt;code&gt;git clone https://github.com/bgspiders/scrabg.git
+cp .env.example .env   根据需求修改里面的数据库信息，存储配置MongoDB，那就是Mongodb不配置代表是mysql
+激活虚拟环境,使用自带的venv或者conda都可以，下面使用venv创建
+python3 -m venv venv
+source venv/bin/activate
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3&gt;2. 安装依赖&lt;/h3&gt;
+&lt;pre&gt;&lt;code&gt;pip install -r requirements.txt
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h4&gt;3. 测试推送任务到 Redis&lt;/h4&gt;
+&lt;pre&gt;&lt;code&gt;source scrabgs/bin/activate
+# 确保 MySQL 中有测试数据
+ python config_request_producer.py
+
+# 检查 Redis 队列
+redis-cli LLEN fetch_spider:start_urls
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;示例图片&lt;img src=&quot;image1.png&quot; alt=&quot;img_2&quot; /&gt;&lt;/p&gt;
+&lt;p&gt;‍&lt;/p&gt;
+&lt;h4&gt;4. 测试爬虫运行&lt;/h4&gt;
+&lt;pre&gt;&lt;code&gt;source scrabgs/bin/activate
+
+# 测试 fetch_spider（从 Redis 消费）
+scrapy crawl fetch_spider -L INFO
+#使用requests队列
+python requests_worker.py
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;示例图片 &lt;img src=&quot;image2.png&quot; alt=&quot;img&quot; /&gt;&lt;/p&gt;
+&lt;h4&gt;5. 测试解析节点&lt;/h4&gt;
+&lt;pre&gt;&lt;code&gt;source scrabgs/bin/activate
+#使用requests队列
+python success_worker.py
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;示例图片 &lt;img src=&quot;image3.png&quot; alt=&quot;img_1&quot; /&gt;&lt;/p&gt;
+&lt;h4&gt;6. 验证数据保存&lt;/h4&gt;
+&lt;pre&gt;&lt;code&gt;-- 检查 articles 表中的数据
+SELECT * FROM articles ORDER BY created_at DESC LIMIT 10;
+
+-- 检查成功队列中的数据（需要从 Redis 读取）
+redis-cli LRANGE fetch_spider:success 0 9
+在数据库中查看数据mysql中是articles，mongodb中是items
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;mongo是整体保存，mysql分表保存&lt;br /&gt;
+mongo数据库截图&lt;br /&gt;
+​&lt;img src=&quot;image4.png&quot; alt=&quot;img_3&quot; /&gt;&lt;br /&gt;
+mysql数据库截图-列表&lt;br /&gt;
+​&lt;img src=&quot;image5.png&quot; alt=&quot;img_4&quot; /&gt;&lt;br /&gt;
+mysql数据库截图-详情&lt;br /&gt;
+​&lt;img src=&quot;image6.png&quot; alt=&quot;img_7&quot; /&gt;&lt;/p&gt;
+&lt;h3&gt;7. 前端保存结果界面&lt;/h3&gt;
+&lt;p&gt;界面截图，可以进行查询，点击可以查看详情&lt;br /&gt;
+mongo数据库截图&lt;br /&gt;
+​&lt;img src=&quot;image7.png&quot; alt=&quot;img_5&quot; /&gt;&lt;br /&gt;
+mysql版本&lt;br /&gt;
+​&lt;img src=&quot;image8.png&quot; alt=&quot;img_6&quot; /&gt;&lt;/p&gt;
+&lt;h3&gt;8 分布式启动&lt;/h3&gt;
+&lt;p&gt;可以在多台服务器启动请求和解析节点，根据自己需求启动&lt;/p&gt;
+</content:encoded></item><item><title>supervisor教程</title><link>https://blog.gspider.com/posts/supervisor%E6%95%99%E7%A8%8B/</link><guid isPermaLink="true">https://blog.gspider.com/posts/supervisor%E6%95%99%E7%A8%8B/</guid><description>supervisor是一个统一管理批量化进程的工具，最主要用处是接口或者程序半夜挂了，能够自己重新启动。</description><pubDate>Wed, 17 Dec 2025 00:00:00 GMT</pubDate><content:encoded>&lt;h1&gt;supervisor教程&lt;/h1&gt;
+&lt;hr /&gt;
+&lt;p&gt;supervisor教程&lt;/p&gt;
+&lt;p&gt;supervisor是一个统一管理批量化进程的工具，最主要用处是接口或者程序半夜挂了，能够自己重新启动。&lt;/p&gt;
+&lt;p&gt;官方网址：http://www.supervisord.org/&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;安装&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;使用pip和yum都可以安装。&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;配置管理&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;supervisor是通过两个配置文件对进程统一管理，格式是ini，注释是前面加分号。&lt;/p&gt;
+&lt;p&gt;主进程配置文件：/etc/supervisord.conf  就是supervisor本身的配置文件。&lt;/p&gt;
+&lt;p&gt;子进程配置文件：/etc/supervisord.d/  该文件夹下是supervisor管理的各个进程所属的配置文件。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;2.1 主进程配置文件&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;基本不用改，一般是反注释掉[inet_http_server]模块，可以通过web界面进行管理。以及配置[include]模块中的路径。&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;配置区域&lt;/th&gt;
+&lt;th&gt;配置信息&lt;/th&gt;
+&lt;th&gt;解释说明&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;[unix_http_server]&lt;/td&gt;
+&lt;td&gt;file=/var/run/supervisor/supervisor.sock&lt;/td&gt;
+&lt;td&gt;一定要配置对，sockt套接字，该套接字是supervisor客户端和服务端进行连接的桥梁。&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;td&gt;chmod=0700&lt;/td&gt;
+&lt;td&gt;该套接字的权限，表示用户拥有该套接字的读写该权限，组和其他都没有权限。&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;td&gt;chown=nobody:nogroup&lt;/td&gt;
+&lt;td&gt;用户和组设定， 格式:uid:gid&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;[inet_http_server]&lt;/td&gt;
+&lt;td&gt;port=127.0.0.1:9001&lt;/td&gt;
+&lt;td&gt;Web管理界面网址&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;td&gt;username=user&lt;/td&gt;
+&lt;td&gt;登录名&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;td&gt;password=123&lt;/td&gt;
+&lt;td&gt;登录密码&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;supervisord&lt;/td&gt;
+&lt;td&gt;logfile=/tmp/supervisord.log&lt;/td&gt;
+&lt;td&gt;supervisor运行的日志文件&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;td&gt;logfile_maxbytes=50MB&lt;/td&gt;
+&lt;td&gt;日志文件最大，超出会rotate,设置为0，表示不限大小。&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;td&gt;logfile_backups=10&lt;/td&gt;
+&lt;td&gt;日志文件备份数量，0表示不备份。&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;td&gt;loglevel=info&lt;/td&gt;
+&lt;td&gt;日志级别&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;td&gt;pidfile=/tmp/supervisord.pid&lt;/td&gt;
+&lt;td&gt;supervisor进程号的保存地址。&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;td&gt;nodaemon=false&lt;/td&gt;
+&lt;td&gt;默认后台启动。&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;td&gt;minfds=1024&lt;/td&gt;
+&lt;td&gt;可以打开的文件描述符的最小值，也及时文件的索引最大值。一般就是调用子进程的配置文件数量。&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;td&gt;minprocs=200&lt;/td&gt;
+&lt;td&gt;能管理的进程数量&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;supervisorctl（二选一）&lt;/td&gt;
+&lt;td&gt;serverutl=unix:///tmp/supervisor.sock&lt;/td&gt;
+&lt;td&gt;通过unix socket连接supervisord，路径要和file一样。理解就是能通过服务器的命令行supervisorctl进行管理&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;td&gt;serverurl=http://127.0.0.1:9001&lt;/td&gt;
+&lt;td&gt;在本机管理另一台服务器的supervisor服务，例如通过supervisorctl 10.0.0.1 --http 10.0.0.2 进行管理&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;[program:tomcat]&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;td&gt;管理进程的参数 ，格式 program:项目名称，这个区域在子进程文件中替代。&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;td&gt;command=/opt/apache-tomcat/bin/catalina.sh run&lt;/td&gt;
+&lt;td&gt;执行命令&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;td&gt;autostart=true&lt;/td&gt;
+&lt;td&gt;supervisord启动的时候也自动启动&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;td&gt;startsecs=10&lt;/td&gt;
+&lt;td&gt;启动10秒后还是处于正常运行状态，表示该服务已经启动了。有异常就退出&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;td&gt;autorestart=true&lt;/td&gt;
+&lt;td&gt;[unexpected, true, false], unexpected,如果是Kill -9的话，表示是异常结束的，会重新启动。supervisorctl stop 表示正常结束，不重新启动。一般部署服务都是用true。&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;td&gt;startetries=3&lt;/td&gt;
+&lt;td&gt;重启次数。失败三次之后&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;td&gt;user=root&lt;/td&gt;
+&lt;td&gt;默认用户启动&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;td&gt;priority=999&lt;/td&gt;
+&lt;td&gt;启动先后顺序编码，值小的先启动。&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;td&gt;redirect_stderr=true&lt;/td&gt;
+&lt;td&gt;错误和正常信息都重定向到stdout&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;td&gt;stdout_logfile_maxbytes=20MB&lt;/td&gt;
+&lt;td&gt;stdout 日志大小&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;td&gt;stdout_logfile_backups=20&lt;/td&gt;
+&lt;td&gt;stdout日志文件备份数量，默认10&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;td&gt;stdout_logfile=/otp.apache-tomcat/logs/catalina.out&lt;/td&gt;
+&lt;td&gt;stdout日志文件保存路径，需要保证路径存在，不存在手动创建&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;[include]&lt;/td&gt;
+&lt;td&gt;files=/etc/supervisord.d/*.ini&lt;/td&gt;
+&lt;td&gt;可以不用像[program:xxx]区域一样配置，读取子进程配置文件就可以。&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;&lt;strong&gt;2.2 子进程配置文件&lt;/strong&gt;&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;启动和管理supervisor&lt;/li&gt;
+&lt;/ol&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;命令&lt;/th&gt;
+&lt;th&gt;作用说明&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;supervisord -c /etc/supervisord.conf&lt;/td&gt;
+&lt;td&gt;读取主进程配置文件，并启动&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;systemctl start supervisord.service&lt;/td&gt;
+&lt;td&gt;编写supervisor.service文件启动supervisor，并加载默认配置文件看，默认是/etc/supervisord.conf&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;systemctl enable supervisord.service&lt;/td&gt;
+&lt;td&gt;开机就启动&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;命令&lt;/th&gt;
+&lt;th&gt;作用说明&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;supervisorctl status&lt;/td&gt;
+&lt;td&gt;查看所有进程的状态&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;supervisorctl stop all / supervisorctl stop nginx&lt;/td&gt;
+&lt;td&gt;停止所有进程/停止nginx进程&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;supervisorctl start all / supervisorctl start nginx&lt;/td&gt;
+&lt;td&gt;启动所有进程/启动nginx进程&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;supervisorctl restart all / supervisorctl restart nginx启动所有进程/启动nginx进程&lt;/td&gt;
+&lt;td&gt;重新启动所有进程/重新启动nginx进程&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;supervisorctl update&lt;/td&gt;
+&lt;td&gt;重新加载新的配置文件，并启动新加入的进程。&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;supervisorctl relaod&lt;/td&gt;
+&lt;td&gt;配置文件修改后，主进程不变，重新启动所有的子进程&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;ol&gt;
+&lt;li&gt;附录&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;配置systemctl的supervisord.service文件&lt;/p&gt;
+&lt;p&gt;/home/test/supervisord-start.sh文件&lt;/p&gt;
+&lt;p&gt;/home/test/supervisord-restart.sh&lt;/p&gt;
+&lt;p&gt;/home/test/supervisord-stop.sh&lt;/p&gt;
+</content:encoded></item><item><title>通用爬虫采集框架开发</title><link>https://blog.gspider.com/posts/guide/%E9%80%9A%E7%94%A8%E7%88%AC%E8%99%AB%E9%87%87%E9%9B%86%E6%A1%86%E6%9E%B6%E5%BC%80%E5%8F%91%E8%BF%9B%E5%BA%A6/</link><guid isPermaLink="true">https://blog.gspider.com/posts/guide/%E9%80%9A%E7%94%A8%E7%88%AC%E8%99%AB%E9%87%87%E9%9B%86%E6%A1%86%E6%9E%B6%E5%BC%80%E5%8F%91%E8%BF%9B%E5%BA%A6/</guid><description>scra是一套基于RuoYi-Vue3-FastAPI开发的智能爬虫管理平台，专注于提供可视化的爬虫配置、管理和监控功能。</description><pubDate>Mon, 15 Dec 2025 00:00:00 GMT</pubDate><content:encoded>&lt;h2&gt;项目地址&lt;/h2&gt;
+&lt;p&gt;https://github.com/scrabg/scra&lt;/p&gt;
+&lt;h2&gt;碎碎念&lt;/h2&gt;
+&lt;p&gt;间隔两个月终于来更新进度，主要因为时间分散，进度一直拖着。有想法或建议欢迎在 issues 里留言。项目的原始前后端源码来自：https://gitee.com/insistence2022/RuoYi-Vue3-FastAPI
+感谢作者的开源，也感谢 AI 帮我晚上提速。&lt;/p&gt;
+&lt;h2&gt;整体开发工具&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;IDE：Cursor、Trae（前期）、PyCharm&lt;/li&gt;
+&lt;li&gt;数据库与 SSH：HexHub，数据库和 SSH 集成在一个工具里，少开几个窗口就很香。推荐码 &lt;code&gt;bgspider&lt;/code&gt;，官网：https://www.hexhub.cn/&lt;/li&gt;
+&lt;li&gt;依赖：本地 MySQL、Redis 等&lt;/li&gt;
+&lt;li&gt;设备：Mac&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;目标&lt;/h2&gt;
+&lt;p&gt;scrabg 是一套基于 RuoYi-Vue3-FastAPI 的智能爬虫管理平台，目标是提供可视化的爬虫配置、管理与监控。&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;任务管理：新增/修改/删除任务，配置定时，查看已采集数据。&lt;/li&gt;
+&lt;li&gt;可视化配置：支持 xpath、正则、自定义代码等方式提取信息，可按节点组合多阶段流程，尽量做到可视化即可完成采集。&lt;/li&gt;
+&lt;li&gt;监控：查看任务运行与健康状态。&lt;/li&gt;
+&lt;li&gt;日志：后续补充。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;开发计划与每日进度&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;12/11：重新梳理项目，拉取最新代码；本地用 Docker 重建数据库与前后端环境；确定本月要落地的数据 JSON 结构。教程地址 https://blog.bgspider.com/posts/mac安装mysql和redis/&lt;/li&gt;
+&lt;li&gt;12/15：更新爬虫核心流程（配置驱动 + 仅请求 + workflow 分发），细节与代码片段见 https://blog.bgspider.com/posts/scrabg%E5%88%9D%E4%BD%93%E9%AA%8C%E4%B8%80/&lt;/li&gt;
+&lt;/ul&gt;
+</content:encoded></item><item><title>scrabg 初体验（一）</title><link>https://blog.gspider.com/posts/scrabg%E5%88%9D%E4%BD%93%E9%AA%8C%E4%B8%80/</link><guid isPermaLink="true">https://blog.gspider.com/posts/scrabg%E5%88%9D%E4%BD%93%E9%AA%8C%E4%B8%80/</guid><description>基于 Scrapy-Redis 的可扩展分布式爬虫实践笔记</description><pubDate>Mon, 15 Dec 2025 00:00:00 GMT</pubDate><content:encoded>&lt;h1&gt;Scrapy-Redis 分布式爬虫系统实践笔记&lt;/h1&gt;
+&lt;p&gt;这是我用 Scrapy-Redis 打造分布式爬虫的第一版实践，目标是：任务既能由配置文件驱动，也能从 MySQL 拉取后推到 Redis 调度，最终结果写回 MySQL。源码在 GitHub：&lt;a href=&quot;https://github.com/bgspiders/scrabg&quot;&gt;https://github.com/bgspiders/scrabg&lt;/a&gt;。&lt;/p&gt;
+&lt;h2&gt;功能特性&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;✅ Scrapy-Redis 架构，天然支持分布式&lt;/li&gt;
+&lt;li&gt;✅ JSON 配置驱动任务，开箱即用&lt;/li&gt;
+&lt;li&gt;✅ 支持从 MySQL 读取任务并推送到 Redis&lt;/li&gt;
+&lt;li&gt;✅ 仅请求模式（不解析，直接存响应）&lt;/li&gt;
+&lt;li&gt;✅ 结果自动写入 MySQL&lt;/li&gt;
+&lt;li&gt;✅ 可扩展的 workflow，便于自定义步骤&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;12/15：核心爬虫逻辑更新&lt;/h2&gt;
+&lt;p&gt;最近把「配置驱动爬虫」与「仅请求爬虫」的核心代码整理了一版，细节可见文章：&lt;a href=&quot;https://blog.bgspider.com/posts/scrabg%E5%88%9D%E4%BD%93%E9%AA%8C(%E4%B8%80)/&quot;&gt;https://blog.bgspider.com/posts/scrabg初体验(一)/&lt;/a&gt;。核心思路：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;启动阶段：从 &lt;code&gt;.env&lt;/code&gt; 或命令行读取配置，初始化 Redis/MySQL 连接，加载 &lt;code&gt;CONFIG_PATH&lt;/code&gt;。&lt;/li&gt;
+&lt;li&gt;请求生成：&lt;code&gt;config_request_producer.py&lt;/code&gt; 把 &lt;code&gt;demo.json&lt;/code&gt; 的初始请求推到 &lt;code&gt;fetch_spider:start_urls&lt;/code&gt;。&lt;/li&gt;
+&lt;li&gt;爬虫执行：&lt;code&gt;fetch_spider&lt;/code&gt; 仅发送请求，不做解析，原样把响应入队 &lt;code&gt;fetch_spider:success&lt;/code&gt;。&lt;/li&gt;
+&lt;li&gt;工作流推进：&lt;code&gt;success_worker.py&lt;/code&gt; 根据 &lt;code&gt;workflowSteps&lt;/code&gt; 逐步执行 &lt;code&gt;request -&amp;gt; link_extraction -&amp;gt; data_extraction&lt;/code&gt;，并将新请求或数据继续入队。&lt;/li&gt;
+&lt;li&gt;落库：&lt;code&gt;pipelines.py&lt;/code&gt; 把最终数据写入 MySQL 的 &lt;code&gt;articles&lt;/code&gt; 表。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;关键代码片段（摘自 &lt;code&gt;crawler/utils/workflow.py&lt;/code&gt;），展示如何根据步骤类型分发处理：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;def run_workflow_step(step_type, step_config, response, context):
+    if step_type == &quot;request&quot;:
+        return make_next_request(step_config, response, context)
+    if step_type == &quot;link_extraction&quot;:
+        links = extract_links(step_config, response)
+        return enqueue_links(links, context)
+    if step_type == &quot;data_extraction&quot;:
+        item = extract_data(step_config, response)
+        return persist_item(item, context)
+    raise ValueError(f&quot;Unknown step type: {step_type}&quot;)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;这样拆分后，新增步骤类型时只需在 &lt;code&gt;workflow.py&lt;/code&gt; 增加分支与实现，整体流程保持解耦。&lt;/p&gt;
+&lt;h2&gt;项目结构&lt;/h2&gt;
+&lt;pre&gt;&lt;code&gt;scrabg/
+├── crawler/                    # Scrapy 爬虫项目
+│   ├── __init__.py
+│   ├── items.py               # 数据项定义
+│   ├── pipelines.py           # MySQL 数据管道
+│   ├── settings.py            # Scrapy 配置
+│   ├── spiders/               # 爬虫文件
+│   │   ├── __init__.py
+│   │   ├── config_spider.py   # 配置驱动爬虫
+│   │   └── fetch_spider.py    # 仅请求爬虫
+│   └── utils/                 # 工具模块
+│       ├── __init__.py
+│       ├── config_loader.py   # 配置加载器
+│       ├── env_loader.py      # 环境变量加载器（.env 文件支持）
+│       └── workflow.py        # 工作流执行器（Scrapy 内部使用）
+├── .env.example               # 环境变量配置示例文件
+├── demo.json                  # 示例配置文件
+├── config_request_producer.py # 根据 demo.json 生成初始请求
+├── success_worker.py          # 解析成功队列并推进 workflow
+├── producer_push_from_mysql.py # MySQL 任务推送脚本（可选）
+├── requirements.txt           # Python 依赖
+├── scrapy.cfg                 # Scrapy 项目配置
+├── test_setup.py              # 环境测试脚本
+├── test_data.sql              # 测试数据 SQL
+└── README.md                  # 本文档
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h2&gt;环境要求与准备&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;Python 3.8+&lt;/li&gt;
+&lt;li&gt;Redis 服务器&lt;/li&gt;
+&lt;li&gt;MySQL 5.7+ 或 MariaDB 10.3+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;快速开始（10 分钟跑通）&lt;/h2&gt;
+&lt;h3&gt;1. 创建虚拟环境&lt;/h3&gt;
+&lt;pre&gt;&lt;code&gt;# 创建虚拟环境（示例名 scrabgs）
+python3 -m venv scrabgs
+
+# 激活虚拟环境
+# macOS/Linux:
+source scrabgs/bin/activate
+# Windows:
+# scrabgs\Scripts\activate
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3&gt;2. 安装依赖&lt;/h3&gt;
+&lt;pre&gt;&lt;code&gt;pip install -r requirements.txt
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3&gt;3. 配置环境变量&lt;/h3&gt;
+&lt;p&gt;&lt;strong&gt;推荐：使用 .env 文件&lt;/strong&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;cp .env.example .env
+# 按需修改 .env 中的配置
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;关键字段示例：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;# Redis 配置
+REDIS_URL=redis://localhost:6379/0
+
+# MySQL 配置
+MYSQL_HOST=localhost
+MYSQL_PORT=3306
+MYSQL_USER=your_username
+MYSQL_PASSWORD=your_password
+MYSQL_DB=your_database
+MYSQL_CHARSET=utf8mb4
+
+# Scrapy 配置（可选）
+CONFIG_PATH=demo.json
+LOG_LEVEL=INFO
+
+# 队列键名（可选）
+SCRAPY_START_KEY=fetch_spider:start_urls
+SUCCESS_QUEUE_KEY=fetch_spider:success
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;strong&gt;注意：&lt;/strong&gt; &lt;code&gt;.env&lt;/code&gt; 已加入 &lt;code&gt;.gitignore&lt;/code&gt;。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;密码提示：&lt;/strong&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Redis 密码：写在 &lt;code&gt;REDIS_URL&lt;/code&gt; 中，格式 &lt;code&gt;redis://:password@host:port/db&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;MySQL 密码含特殊字符时用引号包裹&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;strong&gt;备选：直接设置环境变量&lt;/strong&gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;export REDIS_URL=&quot;redis://localhost:6379/0&quot;
+export MYSQL_HOST=&quot;localhost&quot;
+export MYSQL_PORT=&quot;3306&quot;
+export MYSQL_USER=&quot;your_username&quot;
+export MYSQL_PASSWORD=&quot;your_password&quot;
+export MYSQL_DB=&quot;your_database&quot;
+export CONFIG_PATH=&quot;demo.json&quot;
+export LOG_LEVEL=&quot;INFO&quot;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3&gt;4. 准备数据库（建表 &amp;amp; 测试数据）&lt;/h3&gt;
+&lt;h4&gt;4.1 创建数据表&lt;/h4&gt;
+&lt;pre&gt;&lt;code&gt;-- 用于保存爬取结果
+CREATE TABLE articles (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    task_id VARCHAR(32),
+    title TEXT,
+    link TEXT,
+    content LONGTEXT,
+    source_url TEXT,
+    extra JSON,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_task_id (task_id),
+    INDEX idx_created_at (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 用于存储待抓取请求（用于 fetch_spider）
+CREATE TABLE pending_requests (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    url TEXT NOT NULL,
+    method VARCHAR(10) DEFAULT &apos;GET&apos;,
+    headers_json TEXT,
+    params_json TEXT,
+    meta_json TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_created_at (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h4&gt;4.2 插入测试数据（可选）&lt;/h4&gt;
+&lt;pre&gt;&lt;code&gt;INSERT INTO pending_requests (url, method, headers_json, meta_json) VALUES
+(&apos;https://news.bjx.com.cn/yw/&apos;, &apos;GET&apos;, &apos;{&quot;User-Agent&quot;: &quot;Mozilla/5.0&quot;}&apos;, &apos;{&quot;test&quot;: true}&apos;);
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3&gt;5. 启动 Redis&lt;/h3&gt;
+&lt;pre&gt;&lt;code&gt;redis-cli ping
+# 期望返回: PONG
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h2&gt;三种使用方式&lt;/h2&gt;
+&lt;h3&gt;方式一：配置驱动爬虫（config_spider）&lt;/h3&gt;
+&lt;pre&gt;&lt;code&gt;source scrabgs/bin/activate
+scrapy crawl config_spider
+# 或指定配置文件路径
+scrapy crawl config_spider -s CONFIG_PATH=/path/to/config.json
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;流程：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;读取 &lt;code&gt;demo.json&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;根据 &lt;code&gt;taskInfo.baseUrl&lt;/code&gt; 生成初始请求&lt;/li&gt;
+&lt;li&gt;按 &lt;code&gt;workflowSteps&lt;/code&gt; 顺序执行：
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;request&lt;/code&gt;: 发送 HTTP 请求&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;link_extraction&lt;/code&gt;: 提取链接&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;data_extraction&lt;/code&gt;: 提取数据&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;将数据写入 MySQL &lt;code&gt;articles&lt;/code&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h3&gt;方式二：MySQL 任务推送 + 仅请求爬虫（fetch_spider）&lt;/h3&gt;
+&lt;p&gt;Scrapy 只负责请求与回写，解析可交给后续流程。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;source scrabgs/bin/activate
+python producer_push_from_mysql.py
+scrapy crawl fetch_spider
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;流程：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;code&gt;producer_push_from_mysql.py&lt;/code&gt; 从 &lt;code&gt;pending_requests&lt;/code&gt; 取任务并写入 &lt;code&gt;fetch_spider:start_urls&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;fetch_spider&lt;/code&gt; 消费请求，发送 HTTP 请求&lt;/li&gt;
+&lt;li&gt;响应写入 &lt;code&gt;fetch_spider:success&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;解析可由后续程序完成&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h3&gt;方式三：demo.json 驱动 + 全链路 Redis&lt;/h3&gt;
+&lt;ol&gt;
+&lt;li&gt;推送初始请求&lt;pre&gt;&lt;code&gt;source scrabgs/bin/activate
+python config_request_producer.py
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/li&gt;
+&lt;li&gt;Scrapy 仅请求&lt;pre&gt;&lt;code&gt;scrapy crawl fetch_spider -L INFO
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;success_worker&lt;/code&gt; 解析 workflow&lt;pre&gt;&lt;code&gt;python success_worker.py
+&lt;/code&gt;&lt;/pre&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;request&lt;/code&gt;：直接推进下一步&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;link_extraction&lt;/code&gt;：抽取链接/标题，推送新请求并更新 &lt;code&gt;workflow_index&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;data_extraction&lt;/code&gt;：抽取数据写入 &lt;code&gt;SUCCESS_ITEM_KEY&lt;/code&gt;，并执行 &lt;code&gt;nextRequestCustomCode&lt;/code&gt; 生成更多请求&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;队列为空视为完成，可从 &lt;code&gt;SUCCESS_ITEM_KEY&lt;/code&gt; 读结果，或在 &lt;code&gt;SUCCESS_ERROR_KEY&lt;/code&gt; 查看失败记录&lt;/li&gt;
+&lt;/ol&gt;
+&lt;blockquote&gt;
+&lt;p&gt;若需持久化结果，可编写消费者从 &lt;code&gt;SUCCESS_ITEM_KEY&lt;/code&gt; 读出并写入数据库或消息队列。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h2&gt;配置说明&lt;/h2&gt;
+&lt;h3&gt;.env 文件配置&lt;/h3&gt;
+&lt;p&gt;项目默认读取根目录 &lt;code&gt;.env&lt;/code&gt;，若同名环境变量存在则优先使用。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;配置优先级：&lt;/strong&gt;&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;系统环境变量&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;.env&lt;/code&gt; 文件&lt;/li&gt;
+&lt;li&gt;代码默认值&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;&lt;strong&gt;主要配置项：&lt;/strong&gt;&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;配置项&lt;/th&gt;
+&lt;th&gt;说明&lt;/th&gt;
+&lt;th&gt;默认值&lt;/th&gt;
+&lt;th&gt;必填&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;REDIS_URL&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Redis 连接 URL&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;redis://localhost:6379/0&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;否&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;MYSQL_HOST&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;MySQL 主机地址&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;localhost&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;否&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;MYSQL_PORT&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;MySQL 端口&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;3306&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;否&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;MYSQL_USER&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;MySQL 用户名&lt;/td&gt;
+&lt;td&gt;-&lt;/td&gt;
+&lt;td&gt;是&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;MYSQL_PASSWORD&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;MySQL 密码&lt;/td&gt;
+&lt;td&gt;-&lt;/td&gt;
+&lt;td&gt;是&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;MYSQL_DB&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;MySQL 数据库名&lt;/td&gt;
+&lt;td&gt;-&lt;/td&gt;
+&lt;td&gt;是&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;MYSQL_CHARSET&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;MySQL 字符集&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;utf8mb4&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;否&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;MYSQL_POOL_SIZE&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;连接池大小&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;5&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;否&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;MYSQL_POOL_MAX_OVERFLOW&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;连接池最大溢出&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;5&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;否&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;CONFIG_PATH&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;配置文件路径&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;demo.json&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;否&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;LOG_LEVEL&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;日志级别&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;INFO&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;否&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;SCRAPY_START_KEY&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Scrapy 启动队列键&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;fetch_spider:start_urls&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;否&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;SUCCESS_QUEUE_KEY&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;成功队列键&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;fetch_spider:success&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;否&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;SUCCESS_ITEM_KEY&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;数据结果队列键&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;fetch_spider:data_items&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;否&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;SUCCESS_ERROR_KEY&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;错误队列键&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;fetch_spider:errors&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;否&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;h2&gt;测试项目&lt;/h2&gt;
+&lt;h3&gt;测试脚本&lt;/h3&gt;
+&lt;p&gt;用一条命令验证环境和依赖：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;source scrabgs/bin/activate
+# 确保已准备 .env 或直接设置环境变量
+python test_setup.py
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;脚本会检查：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;✅ 依赖包安装&lt;/li&gt;
+&lt;li&gt;✅ Redis 连接&lt;/li&gt;
+&lt;li&gt;✅ MySQL 连接&lt;/li&gt;
+&lt;li&gt;✅ 配置文件可读&lt;/li&gt;
+&lt;li&gt;✅ 数据表存在&lt;/li&gt;
+&lt;li&gt;✅ Redis 队列可用&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3&gt;手动测试步骤&lt;/h3&gt;
+&lt;h4&gt;1. 测试 Redis 连接&lt;/h4&gt;
+&lt;pre&gt;&lt;code&gt;source scrabgs/bin/activate
+python -c &quot;from redis import Redis; r = Redis.from_url(&apos;redis://localhost:6379/0&apos;); print(&apos;Redis连接成功:&apos;, r.ping())&quot;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h4&gt;2. 测试 MySQL 连接&lt;/h4&gt;
+&lt;pre&gt;&lt;code&gt;source scrabgs/bin/activate
+python -c &quot;
+import os
+os.environ[&apos;MYSQL_USER&apos;] = &apos;your_user&apos;
+os.environ[&apos;MYSQL_PASSWORD&apos;] = &apos;your_password&apos;
+os.environ[&apos;MYSQL_DB&apos;] = &apos;your_db&apos;
+from sqlalchemy import create_engine, text
+engine = create_engine(f&apos;mysql+pymysql://{os.environ[&apos;&quot;&apos;&quot;&apos;MYSQL_USER&apos;&quot;&apos;&quot;&apos;]}:{os.environ[&apos;&quot;&apos;&quot;&apos;MYSQL_PASSWORD&apos;&quot;&apos;&quot;&apos;]}@localhost/{os.environ[&apos;&quot;&apos;&quot;&apos;MYSQL_DB&apos;&quot;&apos;&quot;&apos;]}&apos;)
+with engine.connect() as conn:
+    result = conn.execute(text(&apos;SELECT 1&apos;))
+    print(&apos;MySQL连接成功:&apos;, result.fetchone())
+&quot;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h4&gt;3. 测试配置加载&lt;/h4&gt;
+&lt;pre&gt;&lt;code&gt;source scrabgs/bin/activate
+python -c &quot;
+from crawler.utils.config_loader import load_config
+config = load_config(&apos;demo.json&apos;)
+print(&apos;配置加载成功&apos;)
+print(&apos;任务名称:&apos;, config[&apos;&quot;&apos;&quot;&apos;taskInfo&apos;&quot;&apos;&quot;&apos;][&apos;&quot;&apos;&quot;&apos;name&apos;&quot;&apos;&quot;&apos;])
+print(&apos;工作流步骤数:&apos;, len(config[&apos;&quot;&apos;&quot;&apos;workflowSteps&apos;&quot;&apos;&quot;&apos;]))
+&quot;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h4&gt;4. 测试推送任务到 Redis&lt;/h4&gt;
+&lt;pre&gt;&lt;code&gt;source scrabgs/bin/activate
+python producer_push_from_mysql.py
+redis-cli LLEN fetch_spider:start_urls
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h4&gt;5. 测试爬虫运行&lt;/h4&gt;
+&lt;pre&gt;&lt;code&gt;source scrabgs/bin/activate
+scrapy crawl config_spider -L INFO
+scrapy crawl fetch_spider -L INFO
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h4&gt;6. 验证数据保存&lt;/h4&gt;
+&lt;pre&gt;&lt;code&gt;SELECT * FROM articles ORDER BY created_at DESC LIMIT 10;
+redis-cli LRANGE fetch_spider:success 0 9
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h2&gt;分布式部署&lt;/h2&gt;
+&lt;h3&gt;启动多个爬虫实例&lt;/h3&gt;
+&lt;p&gt;在不同服务器或同一台机器的多个终端启动实例：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;# 服务器 1
+source scrabgs/bin/activate
+scrapy crawl fetch_spider
+
+# 服务器 2
+source scrabgs/bin/activate
+scrapy crawl fetch_spider
+
+# 服务器 3
+source scrabgs/bin/activate
+scrapy crawl fetch_spider
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;所有实例会从同一个 Redis 队列消费任务，实现水平扩展。&lt;/p&gt;
+&lt;h3&gt;监控队列状态&lt;/h3&gt;
+&lt;pre&gt;&lt;code&gt;redis-cli LLEN fetch_spider:start_urls
+redis-cli LLEN fetch_spider:success
+redis-cli SCARD fetch_spider:dupefilter
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h2&gt;配置说明&lt;/h2&gt;
+&lt;h3&gt;demo.json 配置结构&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;taskInfo&lt;/code&gt;: id / name / baseUrl / concurrency / requestInterval&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;workflowSteps&lt;/code&gt;: 工作流步骤数组
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;type&lt;/code&gt;: 步骤类型（&lt;code&gt;request&lt;/code&gt; / &lt;code&gt;link_extraction&lt;/code&gt; / &lt;code&gt;data_extraction&lt;/code&gt;）&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;config&lt;/code&gt;: 步骤配置&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;timeout&lt;/code&gt;: 超时时间&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;retryCount&lt;/code&gt;: 重试次数&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;常见问题&lt;/h2&gt;
+&lt;h3&gt;1. Redis 连接失败&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;确认 Redis 进程是否启动：&lt;code&gt;redis-cli ping&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;检查 &lt;code&gt;REDIS_URL&lt;/code&gt; 是否正确&lt;/li&gt;
+&lt;li&gt;排查防火墙或网络限制&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3&gt;2. MySQL 连接失败&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;确认 MySQL 服务状态&lt;/li&gt;
+&lt;li&gt;校验用户名、密码、数据库名&lt;/li&gt;
+&lt;li&gt;检查用户权限与白名单&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3&gt;3. 爬虫不工作&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;查看 Redis 队列是否有任务：&lt;code&gt;redis-cli LLEN fetch_spider:start_urls&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;提升日志级别排查：&lt;code&gt;scrapy crawl fetch_spider -L DEBUG&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;检查配置文件格式与必填字段&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3&gt;4. 数据未保存到 MySQL&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;检查 &lt;code&gt;ITEM_PIPELINES&lt;/code&gt; 配置是否生效&lt;/li&gt;
+&lt;li&gt;核对 MySQL 表结构&lt;/li&gt;
+&lt;li&gt;查看 Scrapy 日志中的报错&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;开发扩展&lt;/h2&gt;
+&lt;h3&gt;添加新的工作流步骤类型&lt;/h3&gt;
+&lt;ol&gt;
+&lt;li&gt;在 &lt;code&gt;crawler/utils/workflow.py&lt;/code&gt; 增加新的步骤逻辑&lt;/li&gt;
+&lt;li&gt;在 &lt;code&gt;demo.json&lt;/code&gt; 中声明该步骤类型&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h3&gt;自定义数据处理&lt;/h3&gt;
+&lt;ol&gt;
+&lt;li&gt;修改 &lt;code&gt;crawler/pipelines.py&lt;/code&gt; 的 &lt;code&gt;process_item&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;在此加入数据清洗、转换或落库逻辑&lt;/li&gt;
+&lt;/ol&gt;
+</content:encoded></item><item><title>mac在docker下安装mysql和redis</title><link>https://blog.gspider.com/posts/mac%E5%AE%89%E8%A3%85mysql%E5%92%8Credis/</link><guid isPermaLink="true">https://blog.gspider.com/posts/mac%E5%AE%89%E8%A3%85mysql%E5%92%8Credis/</guid><pubDate>Thu, 11 Dec 2025 00:00:00 GMT</pubDate><content:encoded>&lt;h2&gt;前置&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;已安装 Docker Desktop（未装可去官网下载安装）。&lt;/li&gt;
+&lt;li&gt;终端确认 Docker 正常：&lt;code&gt;docker info&lt;/code&gt;。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3&gt;MySQL（8.0 示例）&lt;/h3&gt;
+&lt;ol&gt;
+&lt;li&gt;拉镜像：&lt;code&gt;docker pull mysql:8.0&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;启动容器（持久化+root 密码）&lt;/li&gt;
+&lt;/ol&gt;
+&lt;pre&gt;&lt;code&gt;docker run -d --name mysql \
+  -p 3306:3306 \
+  -e MYSQL_ROOT_PASSWORD=YourPass! \
+  -v ~/docker-data/mysql/data:/var/lib/mysql \
+  -v ~/docker-data/mysql/conf.d:/etc/mysql/conf.d \
+  mysql:8.0
+&lt;/code&gt;&lt;/pre&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;~/docker-data/mysql/data&lt;/code&gt;：持久化数据目录&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;~/docker-data/mysql/conf.d&lt;/code&gt;：自定义 .cnf 配置（可选）&lt;/li&gt;
+&lt;li&gt;如需初始化库/用户：将 SQL 放到 &lt;code&gt;~/docker-data/mysql/init&lt;/code&gt; 并挂载到 &lt;code&gt;/docker-entrypoint-initdb.d&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;ol&gt;
+&lt;li&gt;连接测试&lt;br /&gt;
+宿主机：&lt;code&gt;mysql -h 127.0.0.1 -P 3306 -uroot -p YourPass!&lt;/code&gt;&lt;br /&gt;
+容器内：&lt;code&gt;docker exec -it mysql mysql -uroot -p YourPass!&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;创建业务库与账号（示例）&lt;/li&gt;
+&lt;/ol&gt;
+&lt;pre&gt;&lt;code&gt;CREATE DATABASE scrabg DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE USER &apos;scrabg&apos;@&apos;%&apos; IDENTIFIED BY &apos;scrabg&apos;;
+GRANT ALL PRIVILEGES ON scrabg.* TO &apos;scrabg&apos;@&apos;%&apos;;
+FLUSH PRIVILEGES;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;容器内执行：&lt;code&gt;docker exec -it mysql mysql -uroot -pYourPass! -e &quot;&amp;lt;上述 SQL&amp;gt;&quot;&lt;/code&gt;&lt;br /&gt;
+或进入交互后逐条执行。&lt;/p&gt;
+&lt;h3&gt;Redis（官方稳定版）&lt;/h3&gt;
+&lt;ol&gt;
+&lt;li&gt;拉镜像：&lt;code&gt;docker pull redis:7&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;启动容器（持久化，可选密码）&lt;/li&gt;
+&lt;/ol&gt;
+&lt;pre&gt;&lt;code&gt;docker run -d --name redis \
+  -p 6379:6379 \
+  -v ~/docker-data/redis/data:/data \
+  redis:7 redis-server \
+    --appendonly yes \
+    --requirepass YourRedisPass!
+&lt;/code&gt;&lt;/pre&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;--appendonly yes&lt;/code&gt;：开启 AOF 持久化&lt;/li&gt;
+&lt;li&gt;无需密码可去掉 &lt;code&gt;--requirepass&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;复杂配置可挂载自定义 &lt;code&gt;redis.conf&lt;/code&gt;：&lt;code&gt;-v ~/docker-data/redis/redis.conf:/usr/local/etc/redis/redis.conf&lt;/code&gt;，并使用 &lt;code&gt;redis-server /usr/local/etc/redis/redis.conf&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;ol&gt;
+&lt;li&gt;连接测试&lt;br /&gt;
+宿主机：&lt;code&gt;redis-cli -h 127.0.0.1 -p 6379 -a YourRedisPass!&lt;/code&gt;&lt;br /&gt;
+容器内：&lt;code&gt;docker exec -it redis redis-cli&lt;/code&gt;（有密码时进入后执行 &lt;code&gt;AUTH YourRedisPass!&lt;/code&gt;）&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h3&gt;日常操作&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;停止：&lt;code&gt;docker stop mysql redis&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;启动：&lt;code&gt;docker start mysql redis&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;删除容器：&lt;code&gt;docker rm -f mysql redis&lt;/code&gt;（不会删除本地持久化目录）&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3&gt;常见问题&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;端口被占用：修改 &lt;code&gt;-p&lt;/code&gt; 左侧宿主机端口。&lt;/li&gt;
+&lt;li&gt;Apple Silicon：官方镜像多架构，默认匹配；如需可加 &lt;code&gt;--platform linux/amd64&lt;/code&gt;。&lt;/li&gt;
+&lt;li&gt;数据目录权限：容器无法写入时，可按需 &lt;code&gt;chmod -R 775 ~/docker-data/mysql ~/docker-data/redis&lt;/code&gt;。&lt;/li&gt;
+&lt;/ul&gt;
+</content:encoded></item><item><title>MAC下charles注册</title><link>https://blog.gspider.com/posts/242a726d80a2119bd8e0f85a2439d96e/</link><guid isPermaLink="true">https://blog.gspider.com/posts/242a726d80a2119bd8e0f85a2439d96e/</guid><description>MAC下charles注册</description><pubDate>Tue, 09 Dec 2025 00:00:00 GMT</pubDate><content:encoded>&lt;p&gt;&amp;lt;!--markdown--&amp;gt;&lt;/p&gt;
+&lt;h2&gt;第一步&lt;/h2&gt;
+&lt;p&gt;打开https://inused.github.io/pages/file/tool/CharlesKeygen.html
+&lt;img src=&quot;https://blog.gspider.com/_astro/293388256.62NC1TAw_ZD3fRC.webp&quot; alt=&quot;&quot; /&gt;
+随便输入下用户名，点击生成即可，&lt;/p&gt;
+&lt;h2&gt;激活&lt;/h2&gt;
+&lt;p&gt;&lt;img src=&quot;https://blog.gspider.com/_astro/336448251.DV3f99XP_1oO4dl.webp&quot; alt=&quot;&quot; /&gt;
+打开help-第一个选项，然后复制刚才在网站输入的用户名和注册码，然后重新打开软件就会发现已经激活成功了&lt;/p&gt;
+</content:encoded></item><item><title>浏览器121版本</title><link>https://blog.gspider.com/posts/26f75d9869954f72ab618374902dfb8e/</link><guid isPermaLink="true">https://blog.gspider.com/posts/26f75d9869954f72ab618374902dfb8e/</guid><description>浏览器121版本</description><pubDate>Tue, 09 Dec 2025 00:00:00 GMT</pubDate><content:encoded>&lt;p&gt;&amp;lt;!--markdown--&amp;gt;
+全部浏览器版本下载地址
+https://googlechromelabs.github.io/chrome-for-testing/known-good-versions-with-downloads.json&lt;/p&gt;
+</content:encoded></item><item><title>mac 查看文件夹下文件大小（包含隐藏文件）</title><link>https://blog.gspider.com/posts/6314e19061d176d6205356de0def2e66/</link><guid isPermaLink="true">https://blog.gspider.com/posts/6314e19061d176d6205356de0def2e66/</guid><description>mac 查看文件夹下文件大小（包含隐藏文件）</description><pubDate>Tue, 09 Dec 2025 00:00:00 GMT</pubDate><content:encoded>&lt;p&gt;&amp;lt;!--markdown--&amp;gt;&lt;/p&gt;
+&lt;p&gt;‍&lt;code&gt;du -sh * .[^.]* 2&amp;gt;/dev/null | awk &apos;{print $1, $2}&apos; | sed &apos;s/G/ GB/g&apos; &lt;/code&gt;
+‍&lt;/p&gt;
+</content:encoded></item><item><title>edgeone部署静态网站</title><link>https://blog.gspider.com/posts/edgeone%E9%83%A8%E7%BD%B2%E9%9D%99%E6%80%81%E7%BD%91%E7%AB%99/</link><guid isPermaLink="true">https://blog.gspider.com/posts/edgeone%E9%83%A8%E7%BD%B2%E9%9D%99%E6%80%81%E7%BD%91%E7%AB%99/</guid><pubDate>Tue, 09 Dec 2025 00:00:00 GMT</pubDate><content:encoded>&lt;p&gt;&amp;lt;!--markdown--&amp;gt;
+1、打开官网地址https://console.cloud.tencent.com/edgeone/pages
+2、创建项目
+&lt;img src=&quot;https://blog.gspider.com/_astro/3235952648.C7MRW5yV_Z1SEjCX.webp&quot; alt=&quot;&quot; /&gt;
+3、上传项目
+我是使用直接上传的文件，直接上传dist文件里面的东西，然后直接压缩上传
+4、等待部署
+等部署成功、然后配置域名和证书即可，中国大陆地区只能是备案才能正常访问
+5、效果
+实例地址
+https://curl.bgspider.com/
+https://tools.bgspider.com/
+基本上都是绿色的
+&lt;img src=&quot;https://blog.gspider.com/_astro/3997392033.fikGUpXV_1U4Gmz.webp&quot; alt=&quot;&quot; /&gt;
+&lt;img src=&quot;https://blog.gspider.com/_astro/1184588910.CXuIqgx8_Zz7Kb9.webp&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+</content:encoded></item><item><title>Redis布隆过滤器原理与实践</title><link>https://blog.gspider.com/posts/353efb5593245e737da2faa373dc0a5b/</link><guid isPermaLink="true">https://blog.gspider.com/posts/353efb5593245e737da2faa373dc0a5b/</guid><description>Redis布隆过滤器原理与实践</description><pubDate>Tue, 09 Dec 2025 00:00:00 GMT</pubDate><content:encoded>&lt;p&gt;&amp;lt;!--markdown--&amp;gt;## 背景&lt;/p&gt;
+&lt;p&gt;在高并发请求时，业务数据一般会对数据进行缓存，提高系统并发量，因为磁盘IO和网络IO相对于内存IO的成百上千倍的性能劣势。 做个简单计算，如果我们需要某个数据，该数据从数据库磁盘读出来需要0.1s，从交换机传过来需要0.05s，那么每个请求完成最少0.15s（当然，事实上磁盘和网络IO也没有这么慢，这里只是举例），该数据库服务器每秒只能响应67个请求；而如果该数据存在于本机内存里，读出来只需要10us，那么每秒钟能够响应100，000个请求。 通过将高频使用的数据存在离cpu更近的位置，以减少数据传输时间，从而提高处理效率，这就是缓存的意义。
+&lt;img src=&quot;https://blog.gspider.com/_astro/3593546560.DYwFSd-9_Z1axDGI.webp&quot; alt=&quot;&quot; /&gt;
+但是在上文中提到过，缓存会存在击穿，穿透等问题，对于此我们可以引入Bloom Filter (布隆过滤器)，防止数据库压力过大导致系统异常。&lt;/p&gt;
+&lt;h2&gt;Bloom Filter&lt;/h2&gt;
+&lt;p&gt;如果想要判断一个元素是不是在一个集合里，一般想到的是将所有元素保存起来，然后通过比较确定。 链表，树等等数据结构都是这种思路. 但是随着集合中元素的增加，我们需要的存储空间越来越大， 检索速度也越来越慢(O(n),O(logn))。&lt;/p&gt;
+&lt;p&gt;不过还有一种叫作散列表(又叫哈希表，Hash table)的数据结构，它可以通过一个Hash函数将一个 元素映射成一个位阵列中的一个点，这样一来，我们只要看看这个点是不是1就可以知道集合中有没有它了。 这就是布隆过滤器的基本思想。&lt;/p&gt;
+&lt;p&gt;布隆过滤器（Bloom Filter） 是 1970 年由布隆提出的。它 实际上 是一个很长的二进制向量和一系列 随机映射函数 ，实际上你也可以把它简单理解为一个不怎么精确的 set 结构，当你使用它的 contains 方法判断某个对象是否存在时，它可能会误判。但是布隆过滤器也不是特别不精确，只要参数设置的合理， 它的精确度可以控制的相对足够精确，只会有小小的误判概率。&lt;/p&gt;
+&lt;p&gt;当布隆过滤器说某个值存在时，这个值 可能不存在；当它说不存在时，那么 一定不存在。打个比方，当它说 不认识你时，那就是真的不认识，但是当它说认识你的时候，可能是因为你长得像它认识的另外一个朋友 (脸长 得有些相似)，所以误判认识你。&lt;/p&gt;
+&lt;h2&gt;原理&lt;/h2&gt;
+&lt;p&gt;&lt;strong&gt;当一个元素加入布隆过滤器中的时候，会进行如下操作：&lt;/strong&gt;&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;使用布隆过滤器中的哈希函数对元素值进行计算，得到哈希值（有几个哈希函数得到几个哈希值）。&lt;/li&gt;
+&lt;li&gt;根据得到的哈希值，在位数组中把对应下标的值置为 1。&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;&lt;strong&gt;当我们需要判断一个元素是否存在于布隆过滤器的时候，会进行如下操作：&lt;/strong&gt;&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;对给定元素再次进行相同的哈希计算；&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;得到值之后判断位数组中的每个元素是否都为 1，如果值都为 1，那么说明这个值在布隆过滤器中， 如果存在一个值不为 1，说明该元素不在布隆过滤器中。
+&lt;img src=&quot;https://blog.gspider.com/_astro/188506789.BXGcMUuT_Z1RGErm.webp&quot; alt=&quot;&quot; /&gt;
+如上图，&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;有8个hash位，且默认值为0，&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;当对&lt;code&gt;tencent&lt;/code&gt;进行散列hash之后，2，5，7位被置为1，&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;继续对&lt;code&gt;cloud&lt;/code&gt;进行散列hash后，3，4，6位被置为1。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;这时候我们再对其它词汇&lt;code&gt;other&lt;/code&gt;进行hash，假设散列为1、2、3，1位为0，可以判断该单词不存在集合中。
+汇总流程
+&lt;img src=&quot;https://blog.gspider.com/_astro/2748232112.D3AzLVEY_20AFgp.webp&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h2&gt;如何选择哈希函数个数和布隆过滤器长度&lt;/h2&gt;
+&lt;p&gt;如果布隆过滤器的长度太小，所有的 bit 位很快就会被用完，此时任何查询都会返回“可能存在”； 如果布隆过滤器的长度太大，那么误判的概率会很小，但是内存空间浪费严重。 类似的，哈希函数的个数越多，则布隆过滤器的 bit 位被占用的速度越快；哈希函数的个数越少， 则误判的概率又会上升。因此，布隆过滤器的长度和哈希函数的个数需要根据业务场景来权衡。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;三个参数&lt;/strong&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;哈希函数的个数k；&lt;/li&gt;
+&lt;li&gt;布隆过滤器位数组的容量m;&lt;/li&gt;
+&lt;li&gt;布隆过滤器插入的数据数量n;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;关于三个值的设定，有位大佬十年前的文章已经做了总结，需要深厚的数学功底，这里不再详细赘述。 文章链接是&lt;code&gt;http://blog.csdn.net/jiaomeng/article/details/1495500&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;主要的数学结论有：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;为了获得最优的准确率，当k = ln2 * (m/n)时，布隆过滤器获得最优的准确性；&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;优缺点&lt;/h2&gt;
+&lt;p&gt;优点：优点很明显，二进制组成的数组，占用内存极少，并且插入和查询速度都足够快。&lt;/p&gt;
+&lt;p&gt;缺点：随着数据的增加，误判率会增加；还有无法判断数据一定存在；另外还有一个重要缺点，无法删除数据&lt;/p&gt;
+&lt;h2&gt;场景&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;大数据判断是否存在：这就可以实现出上述的去重功能，如果你的服务器内存足够大的话，那么使用 HashMap 可 能是一个不错的解决方案，理论上时间复杂度可以达到 O(1)的级别，但是当数据量起来之后，还是只能考虑布隆过滤器。&lt;/li&gt;
+&lt;li&gt;解决缓存穿透(背景中提到的问题)：利用布隆过滤器我们可以预先把数据查询的主键，比如用户 ID 或文章 ID 缓存到过滤器中。当根据 ID 进行数据查询的时候，我们先判断该 ID 是否存在，若存在的话，则进行下一步处 理。若不存在的话，直接返回，这样就不会触发后续的数据库查询。需要注意的是缓存穿透不能完全解决，我们只 能将其控制在一个可以容忍的范围内。&lt;/li&gt;
+&lt;li&gt;爬虫/ 邮箱等系统的过滤：平时不知道你有没有注意到有一些正常的邮件也会被放进垃圾邮件目录中，这就是使用布隆过滤器 误判 导致的。&lt;/li&gt;
+&lt;li&gt;Google Chrome 使用布隆过滤器识别恶意 URL。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2&gt;基本操作&lt;/h2&gt;
+&lt;p&gt;布隆过滤器有两个基本指令，&lt;code&gt;bf.add&lt;/code&gt; 添加元素，&lt;code&gt;bf.exists&lt;/code&gt; 查询元素是否存在， 它的用法和 &lt;code&gt;set&lt;/code&gt; 集合的 &lt;code&gt;sadd&lt;/code&gt; 和 &lt;code&gt;sismember&lt;/code&gt; 差不多。注意 &lt;code&gt;bf.add&lt;/code&gt; 只能一次添加一个元素， 如果想要一次添加多个，就需要用到 &lt;code&gt;bf.madd&lt;/code&gt; 指令。同样如果需要一次查询多个元素是否存在， 就需要用到 &lt;code&gt;bf.mexists&lt;/code&gt; 指令。&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;127.0.0.1:6379&amp;gt; bf.reserve users 0.01 1000
+OK
+127.0.0.1:6379&amp;gt; bf.add users u1
+(integer) 1
+127.0.0.1:6379&amp;gt; bf.add users u2
+(integer) 1
+127.0.0.1:6379&amp;gt; bf.add users u3
+(integer) 1
+127.0.0.1:6379&amp;gt; bf.exists users u3
+(integer) 1
+127.0.0.1:6379&amp;gt; bf.madd users user4 user5 user6
+1) (integer) 1
+2) (integer) 1
+3) (integer) 1
+127.0.0.1:6379&amp;gt; bf.mexists users user4 user5 user6 user7
+1) (integer) 1
+2) (integer) 1
+3) (integer) 1
+4) (integer) 0
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;code&gt;bf.reserve&lt;/code&gt; 有三个参数，分别是 key、error_rate (错误率) 和 initial_size：&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;error_rate&lt;/strong&gt; 越低，需要的空间越大，对于不需要过于精确的场合，设置稍大一些也没有关系， 比如上面说的推送系统，只会让一小部分的内容被过滤掉，整体的观看体验还是不会受到很大影响的；&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;initial_size&lt;/strong&gt; 表示预计放入的元素数量，当实际数量超过这个值时，误判率就会提升，所以需要 提前设置一个较大的数值避免超出导致误判率升高；&lt;/p&gt;
+&lt;p&gt;如果不适用 bf.reserve，默认的 &lt;code&gt;error_rate&lt;/code&gt; 是 &lt;code&gt;0.01&lt;/code&gt;，默认的 &lt;code&gt;initial_size&lt;/code&gt; 是 &lt;code&gt;100&lt;/code&gt;。&lt;/p&gt;
+</content:encoded></item><item><title>批量下载必应4K壁纸</title><link>https://blog.gspider.com/posts/%E6%89%B9%E9%87%8F%E4%B8%8B%E8%BD%BD%E5%BF%85%E5%BA%944k%E5%A3%81%E7%BA%B8/</link><guid isPermaLink="true">https://blog.gspider.com/posts/%E6%89%B9%E9%87%8F%E4%B8%8B%E8%BD%BD%E5%BF%85%E5%BA%944k%E5%A3%81%E7%BA%B8/</guid><pubDate>Tue, 09 Dec 2025 00:00:00 GMT</pubDate><content:encoded>&lt;p&gt;&amp;lt;!--markdown--&amp;gt;
+直接上源码&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;# -*- coding: utf-8 -*-  
+import os
+import re
+import requests
+from urllib.parse import urlparse
+from concurrent.futures import ThreadPoolExecutor
+
+
+def download_image(url, output_dir, ym, idx):
+    &quot;&quot;&quot;  
+    下载单个图片并保存到指定文件夹中，按照年/月的结构组织。  
+    &quot;&quot;&quot;
+    print(f&quot;正在下载第 {idx} 张图片：{url}&quot;)
+    try:
+        response = requests.get(url, stream=True, timeout=10)
+        if response.status_code == 200:
+            # 获取文件扩展名  
+            parsed_url = urlparse(url)
+            ext = os.path.splitext(parsed_url.path)[1]
+            if not ext:
+                ext = &quot;.jpg&quot;  # 默认使用 jpg 扩展名  
+
+            # 解析年月信息创建目录结构
+            year, month = ym.split(&apos;-&apos;)
+            year_month_dir = os.path.join(output_dir, year, month)
+
+            # 创建年/月层级目录
+            os.makedirs(year_month_dir, exist_ok=True)
+
+            # 图片保存的路径和文件名 (格式: YYYY-MM_DD.ext)
+            filename = f&quot;{ym}_{idx:02d}{ext}&quot;
+            filepath = os.path.join(year_month_dir, filename)
+
+            # 保存图片到文件  
+            with open(filepath, &quot;wb&quot;) as f:
+                for chunk in response.iter_content(chunk_size=1024):
+                    if chunk:
+                        f.write(chunk)
+            print(f&quot;保存到：{filepath}&quot;)
+        else:
+            print(f&quot;下载失败，状态码：{response.status_code}&quot;)
+    except Exception as e:
+        print(f&quot;下载图片时出现错误：{e}&quot;)
+
+
+def get_url(md_file, output_dir, ym):
+    # 读取 md 文件内容  
+    with open(md_file, &quot;r&quot;, encoding=&quot;utf-8&quot;) as f:
+        content = f.read()  # 使用正则表达式提取图片链接  
+    pattern = r&apos;\[download 4k\]\((.*?)\)&apos;
+    urls = re.findall(pattern, content)
+    print(f&quot;在 {md_file} 中找到 {len(urls)} 个图片链接。&quot;)
+
+    # 创建图片存储文件夹（如果不存在）  
+    os.makedirs(output_dir, exist_ok=True)
+
+    # 使用线程池下载每个图片  
+    with ThreadPoolExecutor() as executor:
+        for idx, url in enumerate(urls, start=1):
+            executor.submit(download_image, url, output_dir, ym, idx)
+
+
+def main(root_dir, output_dir):
+    &quot;&quot;&quot;  
+    遍历根目录下的所有子文件夹，查找 README.md 文件并下载图片。  
+    &quot;&quot;&quot;
+    # 遍历根目录下的所有子文件夹  
+    for root, dirs, files in os.walk(root_dir):
+        for file in files:
+            if file == &quot;README.md&quot;:
+                # 获取年月信息（文件夹名即为年月）  
+                folder_name = os.path.basename(root)
+                # 确保文件夹名称是有效的年月格式  
+                if re.match(r&apos;^\d{4}-\d{2}$&apos;, folder_name):
+                    md_file_path = os.path.join(root, file)
+                    print(f&quot;正在处理 {md_file_path} ...&quot;)
+                    # 下载该目录下的所有图片  
+                    get_url(md_file_path, output_dir, folder_name)
+
+
+if __name__ == &quot;__main__&quot;:
+    # 根目录路径（wallpaper 文件夹路径）  
+    wallpaper_dir = &quot;./bing-wallpaper/picture&quot;
+    # 指定图片保存的输出文件夹  
+    output_directory = &quot;./wallpaper&quot;
+    # 遍历并下载所有图片  
+    main(wallpaper_dir, output_directory)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h2&gt;最终效果&lt;/h2&gt;
+&lt;p&gt;年份
+&lt;img src=&quot;https://blog.gspider.com/_astro/1895893699.kw7y-nLq_1DToxh.webp&quot; alt=&quot;&quot; /&gt;
+月份
+&lt;img src=&quot;https://blog.gspider.com/_astro/3732150367.C1m1uEQg_1S3cnm.webp&quot; alt=&quot;&quot; /&gt;
+&lt;img src=&quot;https://blog.gspider.com/_astro/768532807.C819SiPW_2tOu0F.webp&quot; alt=&quot;&quot; /&gt;
+原始代码来源：https://zhuanlan.zhihu.com/p/25972026050
+只修改保存文件夹位置，已经下载好的文件，可以在线看
+https://cloud.bgspider.com/&lt;/p&gt;
+&lt;h2&gt;使用方法&lt;/h2&gt;
+&lt;p&gt;复制这个代码，将其保存下来成down_bing.py
+安装好requests库，
+&lt;code&gt;pip install requests&lt;/code&gt;
+下载这个项目
+&lt;code&gt;git clone https://github.com/niumoo/bing-wallpaper&lt;/code&gt;
+运行刚保存的文件
+&lt;code&gt;python3 down_bing.py&lt;/code&gt; 然后等着程序运行技术即可&lt;/p&gt;
+</content:encoded></item><item><title>安装pytorch</title><link>https://blog.gspider.com/posts/74681882ead14d79ac9655a95b6f025c/</link><guid isPermaLink="true">https://blog.gspider.com/posts/74681882ead14d79ac9655a95b6f025c/</guid><description>安装pytorch</description><pubDate>Tue, 09 Dec 2025 00:00:00 GMT</pubDate><content:encoded>&lt;p&gt;&amp;lt;!--markdown--&amp;gt;## 使用conda创建环境
+&lt;code&gt;conda create -n torch python=3.12&lt;/code&gt;&lt;/p&gt;
+&lt;h2&gt;进入环境&lt;/h2&gt;
+&lt;p&gt;&lt;code&gt;conda activate pytorch&lt;/code&gt;&lt;/p&gt;
+&lt;h2&gt;安装&lt;/h2&gt;
+&lt;p&gt;打开 https://pytorch.org/get-started/locally/ 官网地址，根据自己的电脑环境需要指定版本，mac的话，直接安装默认版本就行，win、linux有显卡的话，一定得安装显卡版本
+mac的命令
+&lt;code&gt;pip install torch torchvision&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;win
+&lt;code&gt;pip3 install torch torchvision --index-url https://download.pytorch.org/whl/cu129&lt;/code&gt;
+仅供参考，具体在官网查看&lt;/p&gt;
+&lt;h2&gt;测试&lt;/h2&gt;
+&lt;p&gt;mac测试&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;import torch
+torch.__version__
+torch.device(&quot;mps&quot;)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;正常输出mps代表安装正确
+没有win，一般是&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;import torch
+torch.cuda.is_available()
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;可以看到cuda的话，一般是正确的&lt;/p&gt;
+</content:encoded></item><item><title>nginx直接返回ip</title><link>https://blog.gspider.com/posts/5c79eb75a13cf5307e043374ee8aad4c/</link><guid isPermaLink="true">https://blog.gspider.com/posts/5c79eb75a13cf5307e043374ee8aad4c/</guid><description>nginx直接返回ip</description><pubDate>Tue, 09 Dec 2025 00:00:00 GMT</pubDate><content:encoded>&lt;p&gt;&amp;lt;!--markdown--&amp;gt;## nginx配置&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;      location / {
+        add_header Content-Type &quot;text/plain; charset=utf-8&quot;;
+        # 直接返回客户端IP
+        access_log off;
+        # 使用 echo 模块（如果安装了）
+        echo $remote_addr;
+        
+    }
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;然后浏览器或者py、go都可以直接请求返回ip
+示例代码：curl ip.bgspider.com&lt;/p&gt;
+&lt;h2&gt;使用cdn+nginx&lt;/h2&gt;
+&lt;pre&gt;&lt;code&gt;location / {
+        return 200 &quot;$http_x_forwarded_for&quot;;
+        add_header Content-Type text/plain;
+    }
+&lt;/code&gt;&lt;/pre&gt;
+</content:encoded></item><item><title>aes-cbc-iso10126模式加密</title><link>https://blog.gspider.com/posts/aes-cbc-iso10126%E6%A8%A1%E5%BC%8F%E5%8A%A0%E5%AF%86/</link><guid isPermaLink="true">https://blog.gspider.com/posts/aes-cbc-iso10126%E6%A8%A1%E5%BC%8F%E5%8A%A0%E5%AF%86/</guid><pubDate>Tue, 09 Dec 2025 00:00:00 GMT</pubDate><content:encoded>&lt;p&gt;&amp;lt;!--markdown--&amp;gt;&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;#!/usr/bin/python3
+# -*- coding: utf-8 -*-
+&quot;&quot;&quot;
+AES加密工具 - 将JavaScript AES加密转换为Python实现
+&quot;&quot;&quot;
+
+import json
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+from cryptography.hazmat.primitives import padding
+from cryptography.hazmat.backends import default_backend
+import base64
+
+
+def aes_encrypt_data(data, key_str=&quot;7bb3e153f59b11ef&quot;):
+    &quot;&quot;&quot;
+    使用AES CBC模式加密数据，模拟JavaScript的crypto-js库
+
+    Args:
+        data: 要加密的数据（字典或其他可JSON序列化的对象）
+        key_str: 加密密钥字符串，默认为&quot;7bb3e153f59b11ef&quot;
+
+    Returns:
+        str: Base64编码的加密结果
+    &quot;&quot;&quot;
+    try:
+        # 1. 设置密钥和IV
+        t = key_str
+        # key: UTF8编码的密钥
+        key = t.encode(&apos;utf-8&apos;)
+        # iv: 反转密钥字符串后UTF8编码
+        iv_str = t[::-1]  # 等同于 t.split(&quot;&quot;).reverse().join(&quot;&quot;)
+        iv = iv_str.encode(&apos;utf-8&apos;)
+
+        # 2. 将数据转换为JSON字符串
+        json_data = json.dumps(data, ensure_ascii=False, separators=(&apos;,&apos;, &apos;:&apos;))
+        plaintext = json_data.encode(&apos;utf-8&apos;)
+
+        # 3. 使用PKCS7填充（ISO10126在Python中不常用，使用PKCS7替代）
+        padder = padding.PKCS7(128).padder()
+        padded_data = padder.update(plaintext)
+        padded_data += padder.finalize()
+
+        # 4. AES CBC加密
+        cipher = Cipher(
+            algorithms.AES(key),
+            modes.CBC(iv),
+            backend=default_backend()
+        )
+        encryptor = cipher.encryptor()
+        ciphertext = encryptor.update(padded_data) + encryptor.finalize()
+
+        # 5. Base64编码返回结果
+        encrypted_base64 = base64.b64encode(ciphertext).decode(&apos;utf-8&apos;)
+
+        return encrypted_base64
+
+    except Exception as e:
+        print(f&quot;加密过程中出现错误: {e}&quot;)
+        return None
+
+
+def aes_encrypt_with_iso10126_padding(data, key_str=&quot;7bb3e153f59b11ef&quot;):
+    &quot;&quot;&quot;
+    使用AES CBC模式加密数据，尝试模拟ISO10126填充
+
+    Args:
+        data: 要加密的数据
+        key_str: 加密密钥字符串
+
+    Returns:
+        str: Base64编码的加密结果
+    &quot;&quot;&quot;
+    import os
+
+    try:
+        # 1. 设置密钥和IV
+        t = key_str
+        key = t.encode(&apos;utf-8&apos;)
+        iv_str = t[::-1]
+        iv = iv_str.encode(&apos;utf-8&apos;)
+
+        # 2. 将数据转换为JSON字符串
+        json_data = json.dumps(data, ensure_ascii=False, separators=(&apos;,&apos;, &apos;:&apos;))
+        plaintext = json_data.encode(&apos;utf-8&apos;)
+
+        # 3. 手动实现类似ISO10126的填充
+        block_size = 16  # AES块大小
+        padding_length = block_size - (len(plaintext) % block_size)
+
+        # ISO10126: 最后一个字节是填充长度，其他字节是随机数
+        if padding_length == 0:
+            padding_length = block_size
+
+        random_bytes = os.urandom(padding_length - 1)
+        padding_bytes = random_bytes + bytes([padding_length])
+        padded_data = plaintext + padding_bytes
+
+        # 4. AES CBC加密
+        cipher = Cipher(
+            algorithms.AES(key),
+            modes.CBC(iv),
+            backend=default_backend()
+        )
+        encryptor = cipher.encryptor()
+        ciphertext = encryptor.update(padded_data) + encryptor.finalize()
+
+        # 5. Base64编码返回结果
+        encrypted_base64 = base64.b64encode(ciphertext).decode(&apos;utf-8&apos;)
+
+        return encrypted_base64
+
+    except Exception as e:
+        print(f&quot;加密过程中出现错误: {e}&quot;)
+        return None
+
+
+def demo_usage():
+    &quot;&quot;&quot;
+    演示如何使用加密函数
+    &quot;&quot;&quot;
+    # 示例数据
+    sample_data = {
+        &quot;username&quot;: &quot;test_user&quot;,
+        &quot;password&quot;: &quot;test_password&quot;,
+        &quot;timestamp&quot;: 1234567890,
+        &quot;action&quot;: &quot;login&quot;
+    }
+    # 使用类似ISO10126填充加密
+    encrypted_iso = aes_encrypt_with_iso10126_padding(sample_data)
+    print(encrypted_iso)
+
+if __name__ == &quot;__main__&quot;:
+    demo_usage()
+&lt;/code&gt;&lt;/pre&gt;
+</content:encoded></item><item><title>安装opencv-python库时卡住怎么解决</title><link>https://blog.gspider.com/posts/96e26930b8d263b3a80836e47827bba2/</link><guid isPermaLink="true">https://blog.gspider.com/posts/96e26930b8d263b3a80836e47827bba2/</guid><pubDate>Tue, 09 Dec 2025 00:00:00 GMT</pubDate><content:encoded>&lt;h2&gt;&amp;lt;!--markdown--&amp;gt;&lt;/h2&gt;
+&lt;h2&gt;安装opencv-python库时卡住怎么解决（已解决）&lt;/h2&gt;
+&lt;p&gt;遇到 ModuleNotFoundError: No module named &apos;cv2&apos; 解决办法&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;pip install opencv-python
+
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;如果运行上述命令进行opencv-python&lt;br /&gt;
+库安装时卡住，则继续下面的操作：&lt;/p&gt;
+&lt;p&gt;①更新&lt;a href=&quot;https://edu.csdn.net/cloud/sd_summit?utm_source=glcblog&amp;amp;spm=1001.2101.3001.7020&quot;&gt;pip&lt;/a&gt;版本：pip install --upgrade pip ，之后再次尝试&lt;/p&gt;
+&lt;p&gt;②当前的python版本不支持pip的版本（pip会直接装最新的opencv&lt;br /&gt;
+版本），指定安装某个版本就好啦~例如我是3.6版本的python：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;pip install opencv-python -i https://pypi.tuna.tsinghua.edu.cn/simple opencv-python==4.3.0.38
+
+&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;     ③有些库下载时间较久，会误判成卡死，输入命令时，后面增加一个--verbose ，就可以将安装过程事无巨细的展现出来。例如：
+
+&lt;/code&gt;&lt;/pre&gt;
+&lt;pre&gt;&lt;code&gt;pip install opencv-python -i https://pypi.tuna.tsinghua.edu.cn/simple --verbose
+
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;之后耐心等待即可。&lt;/p&gt;
+&lt;p&gt;方案②③是通用的，安装其他库的时候也适用。&lt;/p&gt;
+</content:encoded></item></channel></rss>
