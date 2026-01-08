@@ -1,18 +1,6 @@
----
-title: 获取fake-useragent库全部的User-Agents
-published: 2026-01-08
-description: '获取fake-useragent库全部的User-Agents'
-image: 'api'
-tags: [其他]
-category: 笔记
-draft: false
----
-
-# 获取fake-useragent库全部的User-Agents
-
 ## 关于 User-Agents 数据源
 
-​`fake-useragent`​ 项目所使用的 User-Agent 数据源来自于 [intoli/user-agents](https://github.com/intoli/user-agents) 项目，该项目保持稳定且频繁的更新节奏，能够及时反映最新的浏览器 UA 信息。
+`fake-useragent` 项目所使用的 User-Agent 数据源来自于 [intoli/user-agents](https://github.com/intoli/user-agents) 项目，该项目保持稳定且频繁的更新节奏，能够及时反映最新的浏览器 UA 信息。
 
 ## 国内镜像加速
 
